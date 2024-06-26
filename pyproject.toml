@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyls"
+version = "0.1.0"
+description = "A simple implementation of the ls command for a JSON-based directory structure."
+authors = [
+    { name = "Sourav De", email = "srvz39@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.6"
+license = { text = "MIT" }
+
+[project.urls]
+homepage = "https://github.com/yourusername/pyls"
+repository = "https://github.com/yourusername/pyls"
+
+[tool.setuptools]
+packages = ["pyls"]
+
+[tool.setuptools.entry-points.console_scripts]
+pyls = "pyls:main"
+
+[project.scripts]
+pyls = "pyls:main"
+
+[project.optional-dependencies]
+dev = ["pytest"]
