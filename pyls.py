@@ -28,6 +28,7 @@ def list_directory(
     long_format=False,
     reverse=False,
     sort_by_time=False,
+    human_readable=False,
     filter_by=None,
 ):
     items = directory.get("contents", [])
@@ -53,12 +54,14 @@ def list_directory(
 
     for item in items:
         if long_format:
-            size = human_readable_size(item["size"]) if long_format else item["size"]
+            if human_readable:
+                size = human_readable_size(item["size"])
+            else:
+                size = item["size"]
             time_modified = format_time(item["time_modified"])
             print(f"{item['permissions']} {size:>6} {time_modified} {item['name']}")
         else:
             print(item["name"], end=" ")
-    # print(" ".join(item["name"] for item in items))
 
 
 def navigate_to_path(directory, path):
@@ -124,6 +127,7 @@ def main():
             show_hidden=args.A,
             long_format=args.l,
             reverse=args.r,
+            human_readable=args.h,
             sort_by_time=args.t,
             filter_by=args.filter,
         )

@@ -1,235 +1,117 @@
 # tests/test_pyls.py
 
 import pytest
+import subprocess
+import os
 import json
-from io import StringIO
-from contextlib import redirect_stdout
-from pyls import list_directory, navigate_to_path, load_json
+import sys
 
 
-@pytest.fixture
-def structure():
-    return {
-        "name": "interpreter",
-        "size": 4096,
-        "time_modified": 1699957865,
-        "permissions": "-rw-r--r--",
-        "contents": [
-            {
-                "name": ".gitignore",
-                "size": 8911,
-                "time_modified": 1699941437,
-                "permissions": "drwxr-xr-x",
-            },
-            {
-                "name": "LICENSE",
-                "size": 1071,
-                "time_modified": 1699941437,
-                "permissions": "drwxr-xr-x",
-            },
-            {
-                "name": "README.md",
-                "size": 83,
-                "time_modified": 1699941437,
-                "permissions": "drwxr-xr-x",
-            },
-            {
-                "name": "ast",
-                "size": 4096,
-                "time_modified": 1699957739,
-                "permissions": "-rw-r--r--",
-                "contents": [
-                    {
-                        "name": "go.mod",
-                        "size": 225,
-                        "time_modified": 1699957780,
-                        "permissions": "-rw-r--r--",
-                    },
-                    {
-                        "name": "ast.go",
-                        "size": 837,
-                        "time_modified": 1699957719,
-                        "permissions": "drwxr-xr-x",
-                    },
-                ],
-            },
-            {
-                "name": "go.mod",
-                "size": 60,
-                "time_modified": 1699950073,
-                "permissions": "drwxr-xr-x",
-            },
-            {
-                "name": "lexer",
-                "size": 4096,
-                "time_modified": 1699955487,
-                "permissions": "drwxr-xr-x",
-                "contents": [
-                    {
-                        "name": "lexer_test.go",
-                        "size": 1729,
-                        "time_modified": 1699955126,
-                        "permissions": "drwxr-xr-x",
-                    },
-                    {
-                        "name": "go.mod",
-                        "size": 227,
-                        "time_modified": 1699944819,
-                        "permissions": "-rw-r--r--",
-                    },
-                    {
-                        "name": "lexer.go",
-                        "size": 2886,
-                        "time_modified": 1699955487,
-                        "permissions": "drwxr-xr-x",
-                    },
-                ],
-            },
-            {
-                "name": "main.go",
-                "size": 74,
-                "time_modified": 1699950453,
-                "permissions": "-rw-r--r--",
-            },
-            {
-                "name": "parser",
-                "size": 4096,
-                "time_modified": 1700205662,
-                "permissions": "drwxr-xr-x",
-                "contents": [
-                    {
-                        "name": "parser_test.go",
-                        "size": 1342,
-                        "time_modified": 1700205662,
-                        "permissions": "drwxr-xr-x",
-                    },
-                    {
-                        "name": "parser.go",
-                        "size": 1622,
-                        "time_modified": 1700202950,
-                        "permissions": "-rw-r--r--",
-                    },
-                    {
-                        "name": "go.mod",
-                        "size": 533,
-                        "time_modified": 1699958000,
-                        "permissions": "drwxr-xr-x",
-                    },
-                ],
-            },
-            {
-                "name": "token",
-                "size": 4096,
-                "time_modified": 1699954070,
-                "permissions": "-rw-r--r--",
-                "contents": [
-                    {
-                        "name": "token.go",
-                        "size": 910,
-                        "time_modified": 1699954070,
-                        "permissions": "-rw-r--r--",
-                    },
-                    {
-                        "name": "go.mod",
-                        "size": 66,
-                        "time_modified": 1699944730,
-                        "permissions": "drwxr-xr-x",
-                    },
-                ],
-            },
-        ],
-    }
+@pytest.fixture(scope="module")
+def structure_json_path():
+    return os.path.abspath("structure.json")
 
 
-def test_ls_basic(structure):
-    f = StringIO()
-    with redirect_stdout(f):
-        list_directory(structure)
-    out = f.getvalue().strip()
+def run_pyls(args, structure_json_path):
+    """
+    Wrapper fot pyls to be used in the following testcases
+
+    """
+    env = os.environ.copy()
+    env["STRUCTURE_JSON"] = structure_json_path
+    result = subprocess.run(
+        [sys.executable, "-m", "pyls"] + args, env=env, capture_output=True, text=True
+    )
+    return result.stdout.strip()
+
+
+def test_ls_basic(structure_json_path):
+    """
+    Testing output of pyls
+
+    """
+    output = run_pyls([], structure_json_path)
     expected = "LICENSE README.md ast go.mod lexer main.go parser token"
-    assert out == expected
+    assert output == expected
 
 
-def test_ls_A(structure):
-    f = StringIO()
-    with redirect_stdout(f):
-        list_directory(structure, show_hidden=True)
-    out = f.getvalue().strip()
+def test_ls_A(structure_json_path):
+    """
+    Testing output of pyls -A
+
+    """
+    output = run_pyls(["-A"], structure_json_path)
     expected = ".gitignore LICENSE README.md ast go.mod lexer main.go parser token"
-    assert out == expected
+    assert output == expected
 
 
-def test_ls_l(structure):
-    f = StringIO()
-    with redirect_stdout(f):
-        list_directory(structure, long_format=True)
-    out = f.getvalue().strip()
-    expected = """-rw-r--r-- 1071 Nov 14 11:27 LICENSE
--rw-r--r-- 83 Nov 14 11:27 README.md
--rw-r--r-- 4096 Nov 14 15:58 ast
--rw-r--r-- 60 Nov 14 13:51 go.mod
--rw-r--r-- 4096 Nov 14 15:21 lexer
--rw-r--r-- 74 Nov 14 13:57 main.go
--rw-r--r-- 4096 Nov 17 12:51 parser
--rw-r--r-- 4096 Nov 14 14:57 token"""
-    assert out == expected
+# TODO: Reformat this long ugly test string into bits
+def test_ls_l(structure_json_path):
+    """
+    Testing output of pyls -l
+
+    """
+    output = run_pyls(["-l"], structure_json_path)
+    expected = "drwxr-xr-x   1071 Nov 14 11:27 LICENSE\ndrwxr-xr-x     83 Nov 14 11:27 README.md\n-rw-r--r--   4096 Nov 14 15:58 ast\ndrwxr-xr-x     60 Nov 14 13:51 go.mod\ndrwxr-xr-x   4096 Nov 14 15:21 lexer\n-rw-r--r--     74 Nov 14 13:57 main.go\ndrwxr-xr-x   4096 Nov 17 12:51 parser\n-rw-r--r--   4096 Nov 14 14:57 token"
+    assert output == expected
 
 
-def test_ls_r(structure):
-    f = StringIO()
-    with redirect_stdout(f):
-        list_directory(structure, reverse=True)
-    out = f.getvalue().strip()
+def test_ls_r(structure_json_path):
+    """
+    Testing output of pyls -r
+
+    """
+    output = run_pyls(["-r"], structure_json_path)
     expected = "token parser main.go lexer go.mod ast README.md LICENSE"
-    assert out == expected
+    assert output == expected
 
 
-def test_ls_filter_file(structure):
-    f = StringIO()
-    with redirect_stdout(f):
-        list_directory(structure, filter_by="file")
-    out = f.getvalue().strip()
+def test_ls_filter_file(structure_json_path):
+    """
+    Testing output of pyls --filter=file
+
+    """
+    output = run_pyls(["--filter=file"], structure_json_path)
     expected = "LICENSE README.md go.mod main.go"
-    assert out == expected
+    assert output == expected
 
 
-def test_ls_filter_dir(structure):
-    f = StringIO()
-    with redirect_stdout(f):
-        list_directory(structure, filter_by="dir")
-    out = f.getvalue().strip()
+def test_ls_filter_dir(structure_json_path):
+    """
+    Testing output of pyls --filter=dir
+
+    """
+    output = run_pyls(["--filter=dir"], structure_json_path)
     expected = "ast lexer parser token"
-    assert out == expected
+    assert output == expected
 
 
-def test_ls_invalid_filter(structure):
-    f = StringIO()
-    with redirect_stdout(f):
-        list_directory(structure, filter_by="folder")
-    out = f.getvalue().strip()
+def test_ls_invalid_filter(structure_json_path):
+    """
+    Testing output of pyls -filter=folder
+
+    """
+    output = run_pyls(["--filter=folder"], structure_json_path)
     expected = "error: 'folder' is not a valid filter criteria. Available filters are 'dir' and 'file'"
-    assert out == expected
+    assert output == expected
 
 
-def test_ls_path(structure):
-    path = "parser"
-    sub_directory = navigate_to_path(structure, path)
-    f = StringIO()
-    with redirect_stdout(f):
-        list_directory(sub_directory, long_format=True)
-    out = f.getvalue().strip()
-    expected = """-rw-r--r-- 533 Nov 14 16:03 go.mod
--rw-r--r-- 1.6K Nov 17 12:05 parser.go
--rw-r--r-- 1.4K Nov 17 12:51 parser_test.go"""
-    assert out == expected
+# TODO: Reformat this long ugly test string into bits
+def test_ls_path(structure_json_path):
+    """
+    Testing output of pyls -l path
+
+    """
+    output = run_pyls(["-l", "parser"], structure_json_path)
+    expected = "drwxr-xr-x    533 Nov 14 16:03 go.mod\n-rw-r--r--   1622 Nov 17 12:05 parser.go\ndrwxr-xr-x   1342 Nov 17 12:51 parser_test.go"
+    assert output == expected
 
 
-def test_ls_invalid_path(structure):
-    path = "non_existent_path"
-    f = StringIO()
-    with redirect_stdout(f):
-        result = navigate_to_path(structure, path)
-    out = f.getvalue().strip()
+def test_ls_invalid_path(structure_json_path):
+    """
+    Testing output of pyls invalid path
+
+    """
+    output = run_pyls(["non_existent_path"], structure_json_path)
     expected = "error: cannot access 'non_existent_path': No such file or directory"
-    assert out == expected
-    assert result is None
+    assert output == expected

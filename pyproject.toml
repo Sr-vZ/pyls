@@ -14,8 +14,8 @@ requires-python = ">=3.6"
 license = { text = "MIT" }
 
 [project.urls]
-homepage = "https://github.com/yourusername/pyls"
-repository = "https://github.com/yourusername/pyls"
+homepage = "https://github.com/Sr-vZ/pyls"
+repository = "https://github.com/Sr-vZ/pyls"
 
 [tool.setuptools]
 packages = ["pyls"]
