@@ -1,8 +1,4 @@
-# pyls.py
-
 import json
-import os
-import sys
 from datetime import datetime
 
 
@@ -11,14 +7,14 @@ def load_json(file_path):
         return json.load(f)
 
 
-def human_readable_size(size):
+def human_readable_size(size) -> str:
     for unit in ["B", "K", "M", "G", "T"]:
         if size < 1024:
             return f"{size}{unit}"
         size //= 1024
 
 
-def format_time(epoch_time):
+def format_time(epoch_time) -> str:
     return datetime.fromtimestamp(epoch_time).strftime("%b %d %H:%M")
 
 
@@ -30,7 +26,7 @@ def list_directory(
     sort_by_time=False,
     human_readable=False,
     filter_by=None,
-):
+) -> str:
     items = directory.get("contents", [])
 
     if not show_hidden:
@@ -64,7 +60,7 @@ def list_directory(
             print(item["name"], end=" ")
 
 
-def navigate_to_path(directory, path):
+def navigate_to_path(directory, path) -> str:
     if path in [".", "./"]:
         return directory
     parts = path.strip("/").split("/")
@@ -82,6 +78,7 @@ def navigate_to_path(directory, path):
 
 def print_help():
     help_message = """
+A simple CLI utility to convert json file structure to ls like output
 Usage: python -m pyls [OPTIONS] [PATH]
 
 Options:
