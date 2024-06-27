@@ -3,11 +3,19 @@ from datetime import datetime
 
 
 def load_json(file_path):
+    """
+    Function to load the structure.json and parse
+
+    """
     with open(file_path, "r") as f:
         return json.load(f)
 
 
 def human_readable_size(size) -> str:
+    """
+    Converts file size bytes to KB,MB, GB formats
+
+    """
     for unit in ["B", "K", "M", "G", "T"]:
         if size < 1024:
             return f"{size}{unit}"
@@ -15,6 +23,10 @@ def human_readable_size(size) -> str:
 
 
 def format_time(epoch_time) -> str:
+    """
+    Epoch to linux ls like date time
+
+    """
     return datetime.fromtimestamp(epoch_time).strftime("%b %d %H:%M")
 
 
@@ -27,6 +39,21 @@ def list_directory(
     human_readable=False,
     filter_by=None,
 ) -> str:
+    """
+    The actual ls function to process the flags and output accordingly
+
+    Args:
+        directory (json):
+        show_hidden (bool, optional):  Defaults to False.
+        long_format (bool, optional):  Defaults to False.
+        reverse (bool, optional):  Defaults to False.
+        sort_by_time (bool, optional):  Defaults to False.
+        human_readable (bool, optional):  Defaults to False.
+        filter_by (dir/file, optional):  Defaults to None.
+
+    Returns:
+        str: ls like output
+    """
     items = directory.get("contents", [])
 
     if not show_hidden:
@@ -61,6 +88,9 @@ def list_directory(
 
 
 def navigate_to_path(directory, path) -> str:
+    """
+    Error checking for proper path
+    """
     if path in [".", "./"]:
         return directory
     parts = path.strip("/").split("/")
@@ -77,6 +107,9 @@ def navigate_to_path(directory, path) -> str:
 
 
 def print_help():
+    """
+    Help message wrapper
+    """
     help_message = """
 A simple CLI utility to convert json file structure to ls like output
 Usage: python -m pyls [OPTIONS] [PATH]
@@ -94,6 +127,9 @@ Options:
 
 
 def main():
+    """
+    Main function accepts the flags and executes the proper output
+    """
     import argparse
 
     parser = argparse.ArgumentParser(add_help=False)
